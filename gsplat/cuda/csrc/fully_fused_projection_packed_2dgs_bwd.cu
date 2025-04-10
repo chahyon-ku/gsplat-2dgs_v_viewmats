@@ -120,6 +120,14 @@ __global__ void fully_fused_projection_packed_bwd_2dgs_kernel(
         v_mean
     );
 
+    // v_viewmats
+    // v_R += glm::outerProduct(v_mean_c, glm::make_vec3(means));
+    // v_t += v_mean_c;
+    // v_mean += glm::transpose(R) * v_mean_c;
+    vec3<T> v_t = R * v_mean;
+    mat3<T> v_R = glm::outerProduct(v_t, glm::make_vec3(means));
+    // covar_world_to_cam_vjp(R, covar, v_covar_c, v_R, v_covar);
+
     auto warp = cg::tiled_partition<32>(cg::this_thread_block());
     if (sparse_grad) {
         // write out results with sparse layout
@@ -165,6 +173,24 @@ __global__ void fully_fused_projection_packed_bwd_2dgs_kernel(
             gpuAtomicAdd(v_quats + 3, v_quat[3]);
             gpuAtomicAdd(v_scales, v_scale[0]);
             gpuAtomicAdd(v_scales + 1, v_scale[1]);
+        }
+    }
+
+    // v_viewmats is always in dense layout
+    if (v_viewmats != nullptr) {
+        auto warp_group_c = cg::labeled_partition(warp, cid);
+        warpSum(v_R, warp_group_c);
+        warpSum(v_t, warp_group_c);
+        if (warp_group_c.thread_rank() == 0) {
+            v_viewmats += cid * 16;
+            GSPLAT_PRAGMA_UNROLL
+            for (uint32_t i = 0; i < 3; i++) { // rows
+                GSPLAT_PRAGMA_UNROLL
+                for (uint32_t j = 0; j < 3; j++) { // cols
+                    gpuAtomicAdd(v_viewmats + i * 4 + j, v_R[j][i]);
+                }
+                gpuAtomicAdd(v_viewmats + i * 4 + 3, v_t[i]);
+            }
         }
     }
 }
