@@ -359,9 +359,9 @@ fully_fused_projection_bwd_2dgs_tensor(
 );
 
 std::tuple<
-    torch::Tensor,
-    torch::Tensor,
-    torch::Tensor,
+    // torch::Tensor,
+    // torch::Tensor,
+    // torch::Tensor,
     torch::Tensor,
     torch::Tensor,
     torch::Tensor,
@@ -418,9 +418,9 @@ rasterize_to_pixels_bwd_2dgs_tensor(
     // gradients of outputs
     const torch::Tensor &v_render_colors,  // [C, image_height, image_width, 3]
     const torch::Tensor &v_render_alphas,  // [C, image_height, image_width, 1]
-    const torch::Tensor &v_render_normals, // [C, image_height, image_width, 3]
-    const torch::Tensor &v_render_distort, // [C, image_height, image_width, 1]
-    const torch::Tensor &v_render_median,  // [C, image_height, image_width, 1]
+    // const torch::Tensor &v_render_normals, // [C, image_height, image_width, 3]
+    // const torch::Tensor &v_render_distort, // [C, image_height, image_width, 1]
+    // const torch::Tensor &v_render_median,  // [C, image_height, image_width, 1]
     // options
     bool absgrad
 );

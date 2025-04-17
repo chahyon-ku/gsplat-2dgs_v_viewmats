@@ -36,9 +36,9 @@ __global__ void rasterize_to_pixels_fwd_2dgs_kernel(
     const int32_t *__restrict__ flatten_ids,  // [n_isects]
     S *__restrict__ render_colors,  // [C, image_height, image_width, COLOR_DIM]
     S *__restrict__ render_alphas,  // [C, image_height, image_width, 1]
-    S *__restrict__ render_normals, // [C, image_height, image_width, 3]
-    S *__restrict__ render_distort, // [C, image_height, image_width, 1]
-    S *__restrict__ render_median,  // [C, image_height, image_width, 1]
+    // S *__restrict__ render_normals, // [C, image_height, image_width, 3]
+    // S *__restrict__ render_distort, // [C, image_height, image_width, 1]
+    // S *__restrict__ render_median,  // [C, image_height, image_width, 1]
     int32_t *__restrict__ last_ids, // [C, image_height, image_width]
     int32_t *__restrict__ median_ids // [C, image_height, image_width]
 ) {
@@ -124,17 +124,17 @@ __global__ void rasterize_to_pixels_fwd_2dgs_kernel(
     // Per-pixel distortion error proposed in Mip-NeRF 360.
     // Implemented reference:
     // https://github.com/nerfstudio-project/nerfacc/blob/master/nerfacc/losses.py#L7
-    S distort = 0.f;
-    S accum_vis_depth = 0.f; // accumulate vis * depth
+    // S distort = 0.f;
+    // S accum_vis_depth = 0.f; // accumulate vis * depth
 
     // keep track of median depth contribution
-    S median_depth = 0.f;
-    uint32_t median_idx = 0.f;
+    // S median_depth = 0.f;
+    // uint32_t median_idx = 0.f;
 
     // TODO (WZ): merge pix_out and normal_out to
     //  S pix_out[COLOR_DIM + 3] = {0.f}
     S pix_out[COLOR_DIM] = {0.f};
-    S normal_out[3] = {0.f};
+    // S normal_out[3] = {0.f};
     for (uint32_t b = 0; b < num_batches; ++b) {
         // resync all threads before beginning next batch
         // end early if entire tile is done
@@ -213,30 +213,30 @@ __global__ void rasterize_to_pixels_fwd_2dgs_kernel(
                 pix_out[k] += c_ptr[k] * vis;
             }
 
-            const S *n_ptr = normals + g * 3;
-            GSPLAT_PRAGMA_UNROLL
-            for (uint32_t k = 0; k < 3; ++k) {
-                normal_out[k] += n_ptr[k] * vis;
-            }
+            // const S *n_ptr = normals + g * 3;
+            // GSPLAT_PRAGMA_UNROLL
+            // for (uint32_t k = 0; k < 3; ++k) {
+            //     normal_out[k] += n_ptr[k] * vis;
+            // }
 
-            if (render_distort != nullptr) {
-                // the last channel of colors is depth
-                const S depth = c_ptr[COLOR_DIM - 1];
-                // in nerfacc, loss_bi_0 = weights * t_mids *
-                // exclusive_sum(weights)
-                const S distort_bi_0 = vis * depth * (1.0f - T);
-                // in nerfacc, loss_bi_1 = weights * exclusive_sum(weights *
-                // t_mids)
-                const S distort_bi_1 = vis * accum_vis_depth;
-                distort += 2.0f * (distort_bi_0 - distort_bi_1);
-                accum_vis_depth += vis * depth;
-            }
+            // if (render_distort != nullptr) {
+            //     // the last channel of colors is depth
+            //     const S depth = c_ptr[COLOR_DIM - 1];
+            //     // in nerfacc, loss_bi_0 = weights * t_mids *
+            //     // exclusive_sum(weights)
+            //     const S distort_bi_0 = vis * depth * (1.0f - T);
+            //     // in nerfacc, loss_bi_1 = weights * exclusive_sum(weights *
+            //     // t_mids)
+            //     const S distort_bi_1 = vis * accum_vis_depth;
+            //     distort += 2.0f * (distort_bi_0 - distort_bi_1);
+            //     accum_vis_depth += vis * depth;
+            // }
 
             // compute median depth
-            if (T > 0.5) {
-                median_depth = c_ptr[COLOR_DIM - 1];
-                median_idx = batch_start + t;
-            }
+            // if (T > 0.5) {
+            //     // median_depth = c_ptr[COLOR_DIM - 1];
+            //     median_idx = batch_start + t;
+            // }
 
             cur_idx = batch_start + t;
 
@@ -256,28 +256,28 @@ __global__ void rasterize_to_pixels_fwd_2dgs_kernel(
                 backgrounds == nullptr ? pix_out[k]
                                        : (pix_out[k] + T * backgrounds[k]);
         }
-        GSPLAT_PRAGMA_UNROLL
-        for (uint32_t k = 0; k < 3; ++k) {
-            render_normals[pix_id * 3 + k] = normal_out[k];
-        }
+        // GSPLAT_PRAGMA_UNROLL
+        // for (uint32_t k = 0; k < 3; ++k) {
+        //     render_normals[pix_id * 3 + k] = normal_out[k];
+        // }
         // index in bin of last gaussian in this pixel
         last_ids[pix_id] = static_cast<int32_t>(cur_idx);
 
-        if (render_distort != nullptr) {
-            render_distort[pix_id] = distort;
-        }
+        // if (render_distort != nullptr) {
+        //     render_distort[pix_id] = distort;
+        // }
 
-        render_median[pix_id] = median_depth;
+        // render_median[pix_id] = median_depth;
         // index in bin of gaussian that contributes to median depth
-        median_ids[pix_id] = static_cast<int32_t>(median_idx);
+        // median_ids[pix_id] = static_cast<int32_t>(median_idx);
     }
 }
 
 template <uint32_t CDIM>
 std::tuple<
-    torch::Tensor,
-    torch::Tensor,
-    torch::Tensor,
+    // torch::Tensor,
+    // torch::Tensor,
+    // torch::Tensor,
     torch::Tensor,
     torch::Tensor,
     torch::Tensor,
@@ -342,18 +342,18 @@ call_kernel_with_dim(
         {C, image_height, image_width}, means2d.options().dtype(torch::kInt32)
     );
 
-    torch::Tensor render_normals = torch::empty(
-        {C, image_height, image_width, 3},
-        means2d.options().dtype(torch::kFloat32)
-    );
-    torch::Tensor render_distort = torch::empty(
-        {C, image_height, image_width, 1},
-        means2d.options().dtype(torch::kFloat32)
-    );
-    torch::Tensor render_median = torch::empty(
-        {C, image_height, image_width, 1},
-        means2d.options().dtype(torch::kFloat32)
-    );
+    // torch::Tensor render_normals = torch::empty(
+    //     {C, image_height, image_width, 3},
+    //     means2d.options().dtype(torch::kFloat32)
+    // );
+    // torch::Tensor render_distort = torch::empty(
+    //     {C, image_height, image_width, 1},
+    //     means2d.options().dtype(torch::kFloat32)
+    // );
+    // torch::Tensor render_median = torch::empty(
+    //     {C, image_height, image_width, 1},
+    //     means2d.options().dtype(torch::kFloat32)
+    // );
 
     at::cuda::CUDAStream stream = at::cuda::getCurrentCUDAStream();
     const uint32_t shared_mem =
@@ -398,9 +398,9 @@ call_kernel_with_dim(
             flatten_ids.data_ptr<int32_t>(),
             renders.data_ptr<float>(),
             alphas.data_ptr<float>(),
-            render_normals.data_ptr<float>(),
-            render_distort.data_ptr<float>(),
-            render_median.data_ptr<float>(),
+            // render_normals.data_ptr<float>(),
+            // render_distort.data_ptr<float>(),
+            // render_median.data_ptr<float>(),
             last_ids.data_ptr<int32_t>(),
             median_ids.data_ptr<int32_t>()
         );
@@ -408,18 +408,18 @@ call_kernel_with_dim(
     return std::make_tuple(
         renders,
         alphas,
-        render_normals,
-        render_distort,
-        render_median,
+        // render_normals,
+        // render_distort,
+        // render_median,
         last_ids,
         median_ids
     );
 }
 
 std::tuple<
-    torch::Tensor,
-    torch::Tensor,
-    torch::Tensor,
+    // torch::Tensor,
+    // torch::Tensor,
+    // torch::Tensor,
     torch::Tensor,
     torch::Tensor,
     torch::Tensor,

@@ -44,9 +44,9 @@ __global__ void rasterize_to_pixels_bwd_2dgs_kernel(
     const S *__restrict__ v_render_colors,  // [C, image_height, image_width,
                                             // COLOR_DIM]
     const S *__restrict__ v_render_alphas,  // [C, image_height, image_width, 1]
-    const S *__restrict__ v_render_normals, // [C, image_height, image_width, 3]
-    const S *__restrict__ v_render_distort, // [C, image_height, image_width, 1]
-    const S *__restrict__ v_render_median,  // [C, image_height, image_width, 1]
+    // const S *__restrict__ v_render_normals, // [C, image_height, image_width, 3]
+    // const S *__restrict__ v_render_distort, // [C, image_height, image_width, 1]
+    // const S *__restrict__ v_render_median,  // [C, image_height, image_width, 1]
     // grad inputs
     vec2<S> *__restrict__ v_means2d_abs, // [C, N, 2] or [nnz, 2]
     vec2<S> *__restrict__ v_means2d,     // [C, N, 2] or [nnz, 2]
@@ -69,17 +69,17 @@ __global__ void rasterize_to_pixels_bwd_2dgs_kernel(
     median_ids += camera_id * image_height * image_width;
     v_render_colors += camera_id * image_height * image_width * COLOR_DIM;
     v_render_alphas += camera_id * image_height * image_width;
-    v_render_normals += camera_id * image_height * image_width * 3;
-    v_render_median += camera_id * image_height * image_width;
+    // v_render_normals += camera_id * image_height * image_width * 3;
+    // v_render_median += camera_id * image_height * image_width;
     if (backgrounds != nullptr) {
         backgrounds += camera_id * COLOR_DIM;
     }
     if (masks != nullptr) {
         masks += camera_id * tile_height * tile_width;
     }
-    if (v_render_distort != nullptr) {
-        v_render_distort += camera_id * image_height * image_width;
-    }
+    // if (v_render_distort != nullptr) {
+    //     v_render_distort += camera_id * image_height * image_width;
+    // }
 
     // when the mask is provided, do nothing and return if
     // this tile is labeled as False
@@ -129,11 +129,11 @@ __global__ void rasterize_to_pixels_bwd_2dgs_kernel(
     S T = T_final;
     // the contribution from gaussians behind the current one
     S buffer[COLOR_DIM] = {0.f};
-    S buffer_normals[3] = {0.f};
+    // S buffer_normals[3] = {0.f};
     // index of last gaussian to contribute to this pixel
     const int32_t bin_final = inside ? last_ids[pix_id] : 0;
     // index of gaussian that contributes to median depth
-    const int32_t median_idx = inside ? median_ids[pix_id] : 0;
+    // const int32_t median_idx = inside ? median_ids[pix_id] : 0;
 
     // df/d_out for this pixel
     S v_render_c[COLOR_DIM];
@@ -142,28 +142,28 @@ __global__ void rasterize_to_pixels_bwd_2dgs_kernel(
         v_render_c[k] = v_render_colors[pix_id * COLOR_DIM + k];
     }
     const S v_render_a = v_render_alphas[pix_id];
-    S v_render_n[3];
-    GSPLAT_PRAGMA_UNROLL
-    for (uint32_t k = 0; k < 3; ++k) {
-        v_render_n[k] = v_render_normals[pix_id * 3 + k];
-    }
+    // S v_render_n[3];
+    // GSPLAT_PRAGMA_UNROLL
+    // for (uint32_t k = 0; k < 3; ++k) {
+    //     v_render_n[k] = v_render_normals[pix_id * 3 + k];
+    // }
 
     // prepare for distortion
     S v_distort = 0.f;
     S accum_d, accum_w;
     S accum_d_buffer, accum_w_buffer, distort_buffer;
-    if (v_render_distort != nullptr) {
-        v_distort = v_render_distort[pix_id];
-        // last channel of render_colors is accumulated depth
-        accum_d_buffer = render_colors[pix_id * COLOR_DIM + COLOR_DIM - 1];
-        accum_d = accum_d_buffer;
-        accum_w_buffer = render_alphas[pix_id];
-        accum_w = accum_w_buffer;
-        distort_buffer = 0.f;
-    }
+    // if (v_render_distort != nullptr) {
+    //     v_distort = v_render_distort[pix_id];
+    //     // last channel of render_colors is accumulated depth
+    //     accum_d_buffer = render_colors[pix_id * COLOR_DIM + COLOR_DIM - 1];
+    //     accum_d = accum_d_buffer;
+    //     accum_w_buffer = render_alphas[pix_id];
+    //     accum_w = accum_w_buffer;
+    //     distort_buffer = 0.f;
+    // }
 
     // median depth gradients
-    S v_median = v_render_median[pix_id];
+    // S v_median = v_render_median[pix_id];
 
     // collect and process batches of gaussians
     // each thread loads one gaussian at a time before rasterizing
@@ -274,9 +274,9 @@ __global__ void rasterize_to_pixels_bwd_2dgs_kernel(
             // initialize everything to 0, only set if the lane is valid
             if (valid) {
                 // gradient contribution from median depth
-                if (batch_end - t == median_idx) {
-                    v_rgb_local[COLOR_DIM - 1] += v_median;
-                }
+                // if (batch_end - t == median_idx) {
+                //     v_rgb_local[COLOR_DIM - 1] += v_median;
+                // }
 
                 // compute the current T for this gaussian
                 S ra = 1.0f / (1.0f - alpha);
@@ -296,16 +296,16 @@ __global__ void rasterize_to_pixels_bwd_2dgs_kernel(
                 }
 
                 // update v_normal for this gaussian
-                GSPLAT_PRAGMA_UNROLL
-                for (uint32_t k = 0; k < 3; ++k) {
-                    v_normal_local[k] = fac * v_render_n[k];
-                }
+                // GSPLAT_PRAGMA_UNROLL
+                // for (uint32_t k = 0; k < 3; ++k) {
+                //     v_normal_local[k] = fac * v_render_n[k];
+                // }
 
-                for (uint32_t k = 0; k < 3; ++k) {
-                    v_alpha += (normals_batch[t * 3 + k] * T -
-                                buffer_normals[k] * ra) *
-                               v_render_n[k];
-                }
+                // for (uint32_t k = 0; k < 3; ++k) {
+                //     v_alpha += (normals_batch[t * 3 + k] * T -
+                //                 buffer_normals[k] * ra) *
+                //                v_render_n[k];
+                // }
 
                 v_alpha += T_final * ra * v_render_a;
 
@@ -320,23 +320,23 @@ __global__ void rasterize_to_pixels_bwd_2dgs_kernel(
                 }
 
                 // contribution from distortion
-                if (v_render_distort != nullptr) {
-                    // last channel of colors is depth
-                    S depth = rgbs_batch[t * COLOR_DIM + COLOR_DIM - 1];
-                    S dl_dw =
-                        2.0f *
-                        (2.0f * (depth * accum_w_buffer - accum_d_buffer) +
-                         (accum_d - depth * accum_w));
-                    // df / d(alpha)
-                    v_alpha += (dl_dw * T - distort_buffer * ra) * v_distort;
-                    accum_d_buffer -= fac * depth;
-                    accum_w_buffer -= fac;
-                    distort_buffer += dl_dw * fac;
-                    // df / d(depth). put it in the last channel of v_rgb
-                    v_rgb_local[COLOR_DIM - 1] +=
-                        2.0f * fac * (2.0f - 2.0f * T - accum_w + fac) *
-                        v_distort;
-                }
+                // if (v_render_distort != nullptr) {
+                //     // last channel of colors is depth
+                //     S depth = rgbs_batch[t * COLOR_DIM + COLOR_DIM - 1];
+                //     S dl_dw =
+                //         2.0f *
+                //         (2.0f * (depth * accum_w_buffer - accum_d_buffer) +
+                //          (accum_d - depth * accum_w));
+                //     // df / d(alpha)
+                //     v_alpha += (dl_dw * T - distort_buffer * ra) * v_distort;
+                //     accum_d_buffer -= fac * depth;
+                //     accum_w_buffer -= fac;
+                //     distort_buffer += dl_dw * fac;
+                //     // df / d(depth). put it in the last channel of v_rgb
+                //     v_rgb_local[COLOR_DIM - 1] +=
+                //         2.0f * fac * (2.0f - 2.0f * T - accum_w + fac) *
+                //         v_distort;
+                // }
 
                 //====== 2DGS ======//
                 if (opac * vis <= 0.999f) {
@@ -382,10 +382,10 @@ __global__ void rasterize_to_pixels_bwd_2dgs_kernel(
                     buffer[k] += rgbs_batch[t * COLOR_DIM + k] * fac;
                 }
 
-                GSPLAT_PRAGMA_UNROLL
-                for (uint32_t k = 0; k < 3; ++k) {
-                    buffer_normals[k] += normals_batch[t * 3 + k] * fac;
-                }
+                // GSPLAT_PRAGMA_UNROLL
+                // for (uint32_t k = 0; k < 3; ++k) {
+                //     buffer_normals[k] += normals_batch[t * 3 + k] * fac;
+                // }
             }
             warpSum<COLOR_DIM, S>(v_rgb_local, warp);
             warpSum<3, S>(v_normal_local, warp);
@@ -481,9 +481,9 @@ call_kernel_with_dim(
     // gradients of outputs
     const torch::Tensor &v_render_colors,  // [C, image_height, image_width, 3]
     const torch::Tensor &v_render_alphas,  // [C, image_height, image_width, 1]
-    const torch::Tensor &v_render_normals, // [C, image_height, image_width, 3]
-    const torch::Tensor &v_render_distort, // [C, image_height, image_width, 1]
-    const torch::Tensor &v_render_median,  // [C, image_height, image_width, 1]
+    // const torch::Tensor &v_render_normals, // [C, image_height, image_width, 3]
+    // const torch::Tensor &v_render_distort, // [C, image_height, image_width, 1]
+    // const torch::Tensor &v_render_median,  // [C, image_height, image_width, 1]
     // options
     bool absgrad
 ) {
@@ -503,9 +503,9 @@ call_kernel_with_dim(
     GSPLAT_CHECK_INPUT(median_ids);
     GSPLAT_CHECK_INPUT(v_render_colors);
     GSPLAT_CHECK_INPUT(v_render_alphas);
-    GSPLAT_CHECK_INPUT(v_render_normals);
-    GSPLAT_CHECK_INPUT(v_render_distort);
-    GSPLAT_CHECK_INPUT(v_render_median);
+    // GSPLAT_CHECK_INPUT(v_render_normals);
+    // GSPLAT_CHECK_INPUT(v_render_distort);
+    // GSPLAT_CHECK_INPUT(v_render_median);
     if (backgrounds.has_value()) {
         GSPLAT_CHECK_INPUT(backgrounds.value());
     }
@@ -584,9 +584,9 @@ call_kernel_with_dim(
                 median_ids.data_ptr<int32_t>(),
                 v_render_colors.data_ptr<float>(),
                 v_render_alphas.data_ptr<float>(),
-                v_render_normals.data_ptr<float>(),
-                v_render_distort.data_ptr<float>(),
-                v_render_median.data_ptr<float>(),
+                // v_render_normals.data_ptr<float>(),
+                // v_render_distort.data_ptr<float>(),
+                // v_render_median.data_ptr<float>(),
                 absgrad ? reinterpret_cast<vec2<float> *>(
                               v_means2d_abs.data_ptr<float>()
                           )
@@ -645,9 +645,9 @@ rasterize_to_pixels_bwd_2dgs_tensor(
     // gradients of outputs
     const torch::Tensor &v_render_colors,  // [C, image_height, image_width, 3]
     const torch::Tensor &v_render_alphas,  // [C, image_height, image_width, 1]
-    const torch::Tensor &v_render_normals, // [C, image_height, image_width, 3]
-    const torch::Tensor &v_render_distort, // [C, image_height, image_width, 1]
-    const torch::Tensor &v_render_median,  // [C, image_height, image_width, 1]
+    // const torch::Tensor &v_render_normals, // [C, image_height, image_width, 3]
+    // const torch::Tensor &v_render_distort, // [C, image_height, image_width, 1]
+    // const torch::Tensor &v_render_median,  // [C, image_height, image_width, 1]
     // options
     bool absgrad
 ) {
@@ -677,9 +677,6 @@ rasterize_to_pixels_bwd_2dgs_tensor(
             median_ids,                                                        \
             v_render_colors,                                                   \
             v_render_alphas,                                                   \
-            v_render_normals,                                                  \
-            v_render_distort,                                                  \
-            v_render_median,                                                   \
             absgrad                                                            \
         );
 

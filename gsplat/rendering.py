@@ -1242,9 +1242,9 @@ def rasterization_2dgs(
     (
         render_colors,
         render_alphas,
-        render_normals,
-        render_distort,
-        render_median,
+        # render_normals,
+        # render_distort,
+        # render_median,
     ) = rasterize_to_pixels_2dgs(
         means2d,
         ray_transforms,
@@ -1302,19 +1302,19 @@ def rasterization_2dgs(
         "height": height,
         "tile_size": tile_size,
         "n_cameras": C,
-        "render_distort": render_distort,
+        # "render_distort": render_distort,
         "gradient_2dgs": densify,  # This holds the gradient used for densification for 2dgs
     }
 
-    render_normals = render_normals @ torch.linalg.inv(viewmats)[0, :3, :3].T
+    # render_normals = render_normals @ torch.linalg.inv(viewmats)[0, :3, :3].T
 
     return (
         render_colors,
         render_alphas,
-        render_normals,
-        render_normals_from_depth,
-        render_distort,
-        render_median,
+        # render_normals,
+        # render_normals_from_depth,
+        # render_distort,
+        # render_median,
         meta,
     )
 

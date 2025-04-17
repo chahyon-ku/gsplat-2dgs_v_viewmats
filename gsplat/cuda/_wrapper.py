@@ -1703,9 +1703,9 @@ def rasterize_to_pixels_2dgs(
     (
         render_colors,
         render_alphas,
-        render_normals,
-        render_distort,
-        render_median,
+        # render_normals,
+        # render_distort,
+        # render_median,
     ) = _RasterizeToPixels2DGS.apply(
         means2d.contiguous(),
         ray_transforms.contiguous(),
@@ -1727,7 +1727,7 @@ def rasterize_to_pixels_2dgs(
     if padded_channels > 0:
         render_colors = render_colors[..., :-padded_channels]
 
-    return render_colors, render_alphas, render_normals, render_distort, render_median
+    return render_colors, render_alphas #, render_normals, render_distort, render_median
 
 
 @torch.no_grad()
@@ -1832,9 +1832,9 @@ class _RasterizeToPixels2DGS(torch.autograd.Function):
         (
             render_colors,
             render_alphas,
-            render_normals,
-            render_distort,
-            render_median,
+            # render_normals,
+            # render_distort,
+            # render_median,
             last_ids,
             median_ids,
         ) = _make_lazy_cuda_func("rasterize_to_pixels_fwd_2dgs")(
@@ -1879,9 +1879,9 @@ class _RasterizeToPixels2DGS(torch.autograd.Function):
         return (
             render_colors,
             render_alphas,
-            render_normals,
-            render_distort,
-            render_median,
+            # render_normals,
+            # render_distort,
+            # render_median,
         )
 
     @staticmethod
@@ -1889,9 +1889,9 @@ class _RasterizeToPixels2DGS(torch.autograd.Function):
         ctx,
         v_render_colors: Tensor,
         v_render_alphas: Tensor,
-        v_render_normals: Tensor,
-        v_render_distort: Tensor,
-        v_render_median: Tensor,
+        # v_render_normals: Tensor,
+        # v_render_distort: Tensor,
+        # v_render_median: Tensor,
     ):
 
         (
@@ -1943,9 +1943,9 @@ class _RasterizeToPixels2DGS(torch.autograd.Function):
             median_ids,
             v_render_colors.contiguous(),
             v_render_alphas.contiguous(),
-            v_render_normals.contiguous(),
-            v_render_distort.contiguous(),
-            v_render_median.contiguous(),
+            # v_render_normals.contiguous(),
+            # v_render_distort.contiguous(),
+            # v_render_median.contiguous(),
             absgrad,
         )
         torch.cuda.synchronize()
